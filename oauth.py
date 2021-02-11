@@ -30,14 +30,15 @@ def auth(scopes, creds=None, secrets=None):
                 
                 socket.redirect_uri = 'http://localhost:50790/'
                 # pass localhost as argument to avoid uri redirect mismatch
-                creds = socket.run_local_server(host='localhost', port=50790)
+                credentials = socket.run_local_server(host='localhost', port=50790)
                 # Save the credentials for the next run
                 with open('token.pickle', 'wb') as t:
-                    pickle.dump(creds, t)
-        # Starting the service when creds valid
-        with open('token.pickle', 'rb') as t:
-            creds = pickle.load(t)
-        service = build('classroom', 'v1', credentials=creds)
+                    pickle.dump(credentials, t)
+        else:
+            # Starting the service when creds valid
+            with open(creds, 'rb') as t:
+                credentials = pickle.load(t)
+        service = build('classroom', 'v1', credentials=credentials)
     except Exception:
         print_exc()
     finally:
