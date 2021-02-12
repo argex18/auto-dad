@@ -3,7 +3,6 @@ import pickle
 import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
-from requests_oauthlib import OAuth2Session
 from google.auth.transport.requests import Request
 from traceback import print_exc
 
@@ -11,6 +10,11 @@ from traceback import print_exc
 # default scopes in case client_secrets.json not valid
 #
 SCOPES = [
+    'https://www.googleapis.com/auth/classroom.courses',
+    'https://www.googleapis.com/auth/classroom.rosters',
+    'https://www.googleapis.com/auth/classroom.guardianlinks.students',
+    'https://www.googleapis.com/auth/classroom.profile.photos',
+    'https://www.googleapis.com/auth/classroom.profile.emails',
     'https://www.googleapis.com/auth/classroom.courses.readonly',
     'https://www.googleapis.com/auth/classroom.coursework.me',
     'https://www.googleapis.com/auth/classroom.announcements'
@@ -18,10 +22,24 @@ SCOPES = [
 
 def auth(scopes, creds=None, secrets=None):
     service = None
+    credentials = None
+    exceptions = []
+    n_exc = 0
     try:
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh( Request() )
+        if creds and not isinstance(creds, str):
+            raise TypeError('error: creds must be a path to a .pickle file')
+
+        if creds and os.path.exists(creds):
+            # Starting the service when creds valid
+            with open(creds, 'rb') as t:
+                credentials = pickle.load(t)
+        elif creds and not os.path.exists(creds):
+            exceptions.append( FileNotFoundError('error: the creds .pickle file was not found in the provided path') )
+
+        # Starting the service when not creds valid
+        if not creds or not credentials or not credentials.valid:
+            if creds and credentials and credentials.expired and credentials.refresh_token:
+                credentials.refresh( Request() )
             else:
                 if secrets == None:
                     socket = InstalledAppFlow.from_client_secrets_file( 'client_secrets.json', scopes )
@@ -34,23 +52,12 @@ def auth(scopes, creds=None, secrets=None):
                 # Save the credentials for the next run
                 with open('token.pickle', 'wb') as t:
                     pickle.dump(credentials, t)
-        else:
-            # Starting the service when creds valid
-            with open(creds, 'rb') as t:
-                credentials = pickle.load(t)
         service = build('classroom', 'v1', credentials=credentials)
     except Exception:
         print_exc()
     finally:
+        if len(exceptions) != 0:
+            while n_exc < len(exceptions):
+                print( exceptions[n_exc].args[0] )
+                n_exc += 1
         return service
-        
-def get_courses(service):
-    courses = []
-    try:
-        results = service.courses().list(pageSize=10).execute()
-        courses = results.get('courses', [])
-    except Exception:
-        courses = None
-        print_exc()
-    finally:
-        return courses
