@@ -123,7 +123,7 @@ def get_announcements(service, *course_names):
 
 """
 def t_01(service):
-    request = service.courses().courseWorkMaterials().list(courseId='158451300703')
+    request = service.courses().courseWorkMaterials().list(courseId='')
     results = request.execute()
     return results
 """
@@ -144,8 +144,15 @@ if __name__ == '__main__':
     materials = t_01(service)
     print( materials )
 """ 
-service = oauth.auth(oauth.SCOPES, 'token.pickle')
+service = oauth.auth(oauth.SCOPES, 'token_edu.pickle')
+"""
 if __name__ == '__main__':
     announcements = get_announcements(service, 'Istituzioni di Diritto privato', 'Informatica (Economia)')
     for announcement in announcements:
         print(announcement)
+"""
+"""
+if __name__ == '__main__':
+    RESULTS = service.courses().courseWorkMaterials().list(courseId='').execute()
+    print(RESULTS)
+"""
